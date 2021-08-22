@@ -64,6 +64,9 @@ body {
 		height: auto;
 		width: 100%;
 		object-fit: contain;
+		&:focus {
+			outline: dashed 2px #000;
+		}
 	}
 	&__button {
 		border: none;
@@ -71,6 +74,9 @@ body {
 		margin: 1rem;
 		&:hover {
 			cursor: pointer;
+		}
+		&:focus {
+			outline: dashed 2px #000;
 		}
 	}
 	&__arrow {
