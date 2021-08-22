@@ -7,6 +7,12 @@ const thumbnails = {
   list: createImagesList(20, 50, 50)
 };
 
+const preloadLink = document.createElement('link');
+preloadLink.rel = 'preload';
+preloadLink.href = images.list[0].url;
+preloadLink.as = 'image';
+document.head.appendChild(preloadLink);
+
 const [carouselSlidesUl, carouselThumbnailsUl] = createCarouselContent(
   images,
   thumbnails
@@ -28,18 +34,12 @@ function createImagesList(length, width, height) {
 }
 
 function createCarouselContent(slides, thumbnails) {
-  const slidesUl = document.documentElement.querySelector(".carousel__slides");
-  const thumbnailsUl = document.documentElement.querySelector(
+  const slidesUl = document.querySelector(".carousel__slides");
+  const thumbnailsUl = document.querySelector(
     ".carousel__slides--thumbnails"
   );
   const slidesFragment = document.createDocumentFragment();
   const thumbnailsFragment = document.createDocumentFragment();
-
-  const preloadLink = document.createElement('link');
-  preloadLink.rel = 'preload';
-  preloadLink.href = slides.list[0].url;
-  preloadLink.as = 'image';
-  document.head.appendChild(preloadLink);
 
   for (let i = 0; i < slides.list.length; i++) {
     slidesFragment.appendChild(createSlideLiElem(slides.list[i], "main"));
@@ -82,8 +82,8 @@ function createCarouselContent(slides, thumbnails) {
 }
 
 function addEvents() {
-  const prevButton = document.documentElement.querySelector("#prevButton");
-  const nextButton = document.documentElement.querySelector("#nextButton");
+  const prevButton = document.querySelector("#prevButton");
+  const nextButton = document.querySelector("#nextButton");
 
   nextButton.addEventListener("click", handleNext);
   prevButton.addEventListener("click", handlePrev);
