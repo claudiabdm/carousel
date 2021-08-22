@@ -35,6 +35,12 @@ function createCarouselContent(slides, thumbnails) {
   const slidesFragment = document.createDocumentFragment();
   const thumbnailsFragment = document.createDocumentFragment();
 
+  const preloadLink = document.createElement('link');
+  preloadLink.rel = 'preload';
+  preloadLink.href = slides.list[0].url;
+  preloadLink.as = 'image';
+  document.head.appendChild(preloadLink);
+
   for (let i = 0; i < slides.list.length; i++) {
     slidesFragment.appendChild(createSlideLiElem(slides.list[i], "main"));
     thumbnailsFragment.appendChild(
