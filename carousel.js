@@ -1,75 +1,102 @@
-let currentIdx = 0;
+'use strict';
+import sprite from './sprite.svg';
+export { Carousel };
 
-const images = {
-  list: createImagesList(20, 400, 300)
-};
-const thumbnails = {
-  list: createImagesList(20, 50, 50)
-};
-
-const preloadLink = document.createElement('link');
-preloadLink.rel = 'preload';
-preloadLink.href = images.list[0].url;
-preloadLink.as = 'image';
-document.head.appendChild(preloadLink);
-
-const [carouselSlidesUl, carouselThumbnailsUl] = createCarouselContent(
-  images,
-  thumbnails
-);
-
-const carouselSlides = carouselSlidesUl.children;
-const carouselThumbnails = carouselThumbnailsUl.children;
-
-addEvents();
-
-function createImagesList(length, width, height) {
-  return Array.from(Array(length)).map((elem, idx) => ({
-    id: idx,
-    url: `https://picsum.photos/id/${idx}/${width}/${height}`,
-    alt: "Alt text",
-    width,
-    height
-  }));
+function Carousel(wrapper, slides, thumbnails) {
+  this.currentIdx = 0;
+  this.wrapper = wrapper;
+  this.slides = slides;
+  this.thumbnails = thumbnails;
+  this.slidesUl = null;
+  this.thumbnailsUl = null;
+  this.prevButton = null;
+  this.nextButton = null;
+  this._render();
 }
 
-function createCarouselContent(slides, thumbnails) {
-  const slidesUl = document.querySelector(".carousel__slides");
-  const thumbnailsUl = document.querySelector(
-    ".carousel__slides--thumbnails"
-  );
-  const slidesFragment = document.createDocumentFragment();
-  const thumbnailsFragment = document.createDocumentFragment();
+Carousel.prototype._render = function () {
+  createCarousel.call(this, this.slides, this.thumbnails);
+  addEvents.call(this);
+};
 
-  for (let i = 0; i < slides.list.length; i++) {
-    slidesFragment.appendChild(createSlideLiElem(slides.list[i], "main"));
-    thumbnailsFragment.appendChild(
-      createSlideLiElem(thumbnails.list[i], "thumbnail")
-    );
+function createCarousel(slides, thumbnails) {
+  const carouselFragment = document.createDocumentFragment();
+
+  carouselFragment.appendChild(createCarouselMain.call(this, slides));
+  carouselFragment.appendChild(createCarouselThumbnails.call(this, thumbnails));
+  this.wrapper.appendChild(carouselFragment);
+
+  function createCarouselMain(slides) {
+    const carouselMain = document.createElement('div');
+    const carouselMainFragment = document.createDocumentFragment();
+
+    this.slidesUl = createList({ list: slides.list, type: 'main' });
+
+    this.prevButton = createButton({
+      id: 'prevButton',
+      icon: 'prev',
+      ariaLabel: 'Go to previous photo',
+    });
+
+    this.nextButton = createButton({
+      id: 'nextButton',
+      icon: 'next',
+      ariaLabel: 'Go to next photo',
+    });
+
+    carouselMainFragment.appendChild(this.prevButton);
+    carouselMainFragment.appendChild(this.slidesUl);
+    carouselMainFragment.appendChild(this.nextButton);
+
+    carouselMain.appendChild(carouselMainFragment);
+    carouselMain.classList.add('carousel__main');
+    return carouselMain;
   }
-  slidesUl.appendChild(slidesFragment);
-  thumbnailsUl.appendChild(thumbnailsFragment);
 
-  return [slidesUl, thumbnailsUl];
+  function createCarouselThumbnails(thumbnails) {
+    const carouselThumbnail = document.createElement('div');
+    this.thumbnailsUl = createList({
+      list: thumbnails.list,
+      type: 'thumbnail',
+      className: 'carousel__slides--thumbnails',
+    });
+    carouselThumbnail.appendChild(this.thumbnailsUl);
+    carouselThumbnail.classList.add('carousel__thumbnails');
+    return carouselThumbnail;
+  }
 
-  function createSlideLiElem(imgObj, type) {
-    const li = document.createElement("li");
-    const img = document.createElement("img");
+  function createList({ list, type, className }) {
+    const ul = document.createElement('ul');
+    const arrFragment = document.createDocumentFragment();
+    const classes = className
+      ? ['carousel__slides', className]
+      : ['carousel__slides'];
+    for (let i = 0; i < list.length; i++) {
+      arrFragment.appendChild(createLiElem({ imgObj: list[i], type }));
+    }
+    ul.appendChild(arrFragment);
+    ul.classList.add(...classes);
+    return ul;
+  }
+
+  function createLiElem({ imgObj, type }) {
+    const li = document.createElement('li');
+    const img = document.createElement('img');
     const classesLi = `carousel__slide carousel__slide--${type}`;
-    const classesImg = "carousel__img";
+    const classesImg = 'carousel__img';
     const shouldLoadFirst =
-      type == "thumbnail" ||
-      (type == "main" && (imgObj.id < 2 || imgObj.id > slides.list.length - 2));
+      type == 'thumbnail' ||
+      (type == 'main' && (imgObj.id < 2 || imgObj.id > slides.list.length - 2));
 
     li.className = classesLi;
     img.className = classesImg;
-    if (type == "thumbnail") img.tabIndex = '0';
+    if (type == 'thumbnail') img.tabIndex = '0';
 
     if (imgObj.id === 0) {
-      li.classList.add("carousel__slide--visible");
+      li.classList.add('carousel__slide--visible');
     }
     img.dataset.imgid = imgObj.id;
-    img.dataset.src = !shouldLoadFirst ? imgObj.url : "";
+    img.dataset.src = !shouldLoadFirst ? imgObj.url : '';
     img.alt = imgObj.alt;
     img.src = shouldLoadFirst
       ? imgObj.url
@@ -79,97 +106,141 @@ function createCarouselContent(slides, thumbnails) {
     li.appendChild(img);
     return li;
   }
+
+  function createButton({ type, ariaLabel, id, icon }) {
+    const button = document.createElement('button');
+    button.classList.add('carousel__button');
+    button.type = type || 'button';
+    button.ariaLabel = ariaLabel;
+    button.id = id;
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.classList.add('carousel__arrow');
+    const useSvg = document.createElementNS(
+      'http://www.w3.org/2000/svg',
+      'use'
+    );
+    useSvg.setAttributeNS(
+      'http://www.w3.org/1999/xlink',
+      'href',
+      `${sprite}#${icon}`
+    );
+    svg.appendChild(useSvg);
+    button.appendChild(svg);
+    return button;
+  }
 }
 
 function addEvents() {
-  const prevButton = document.querySelector("#prevButton");
-  const nextButton = document.querySelector("#nextButton");
-
-  nextButton.addEventListener("click", handleNext);
-  prevButton.addEventListener("click", handlePrev);
-
-  carouselThumbnailsUl.addEventListener("click", handleSelectedThumbnail);
-  carouselThumbnailsUl.addEventListener("mouseover", handleHoverImagePreload);
-  carouselThumbnailsUl.addEventListener("keydown", (e) => {
+  this.prevButton.addEventListener('click', goToPrev(this));
+  this.nextButton.addEventListener('click', goToNext(this));
+  this.thumbnailsUl.addEventListener('click', selectThumbnail(this));
+  this.thumbnailsUl.addEventListener('mouseover', imagePreload(this));
+  this.thumbnailsUl.addEventListener('keydown', (e) => {
     if (e.key == 'Enter') {
-      handleSelectedThumbnail(e);
+      selectThumbnail(this)(e);
     }
   });
 
-  document.addEventListener("keydown", (e) => {
-    if (e.key == "ArrowRight") {
-      handleNext();
+  document.addEventListener('keydown', (e) => {
+    if (e.key == 'ArrowRight') {
+      goToNext(this)(e);
     }
-    if (e.key == "ArrowLeft") {
-      handlePrev();
+    if (e.key == 'ArrowLeft') {
+      goToPrev(this)(e);
     }
   });
 
-  function handleNext() {
-    if (currentIdx < carouselSlides.length - 1) {
-      changeCurrentSlide(currentIdx, currentIdx + 1);
-      currentIdx += 1;
+  function selectThumbnail(thisCarousel) {
+    return function handleSelectedThumbnail(e) {
+      const newIdx = Array.from(thisCarousel.slidesUl.children).findIndex(
+        (child) =>
+          child.firstElementChild.dataset.imgid === e.target.dataset.imgid
+      );
+      if (newIdx > -1 && newIdx !== thisCarousel.currentIdx) {
+        loadPrevAndNextImages.call(thisCarousel, newIdx - 1, newIdx + 1);
+        changeCurrentSlide.call(thisCarousel, thisCarousel.currentIdx, newIdx);
+        thisCarousel.currentIdx = newIdx;
+      }
+    };
+  }
+
+  function imagePreload(thisCarousel) {
+    return function handleHoverImagePreload(e) {
+      const newIdx = Array.from(thisCarousel.slidesUl.children).findIndex(
+        (child) =>
+          child.firstElementChild.dataset.imgid === e.target.dataset.imgid
+      );
+      if (newIdx > -1 && newIdx !== thisCarousel.currentIdx) {
+        loadImage(thisCarousel.slidesUl.children[newIdx]?.firstElementChild);
+        loadPrevAndNextImages.bind(thisCarousel, newIdx - 1, newIdx + 1);
+      }
+    };
+  }
+
+  function goToNext(thisCarousel) {
+    return function handleNext(e) {
+      if (thisCarousel.currentIdx < thisCarousel.slidesUl.children.length - 1) {
+        changeCurrentSlide.call(
+          thisCarousel,
+          thisCarousel.currentIdx,
+          thisCarousel.currentIdx + 1
+        );
+        thisCarousel.currentIdx += 1;
+      } else {
+        changeCurrentSlide.call(thisCarousel, thisCarousel.currentIdx, 0);
+        thisCarousel.currentIdx = 0;
+      }
+    };
+  }
+
+  function goToPrev(thisCarousel) {
+    return function handlePrev(e) {
+      if (thisCarousel.currentIdx > 0) {
+        changeCurrentSlide.call(
+          thisCarousel,
+          thisCarousel.currentIdx,
+          thisCarousel.currentIdx - 1
+        );
+        thisCarousel.currentIdx -= 1;
+      } else {
+        changeCurrentSlide.call(
+          thisCarousel,
+          thisCarousel.currentIdx,
+          thisCarousel.slidesUl.children.length - 1
+        );
+        thisCarousel.currentIdx = thisCarousel.slidesUl.children.length - 1;
+      }
+    };
+  }
+
+  function changeCurrentSlide(oldIdx, newIdx) {
+    loadImage(this.slidesUl.children[newIdx]?.firstElementChild);
+
+    if (newIdx < this.slidesUl.children.length - 1 && oldIdx < newIdx) {
+      loadImage(this.slidesUl.children[newIdx + 1]?.firstElementChild);
     } else {
-      changeCurrentSlide(currentIdx, 0);
-      currentIdx = 0;
+      loadImage(this.slidesUl.children[newIdx - 1]?.firstElementChild);
     }
-  }
 
-  function handlePrev() {
-    if (currentIdx > 0) {
-      changeCurrentSlide(currentIdx, currentIdx - 1);
-      currentIdx -= 1;
-    } else {
-      changeCurrentSlide(currentIdx, carouselSlides.length - 1);
-      currentIdx = carouselSlides.length - 1;
-    }
-  }
-
-  function handleSelectedThumbnail(e) {
-    const newIdx = Array.from(carouselSlides).findIndex(
-      (child) => child.firstElementChild.dataset.imgid === e.target.dataset.imgid
+    this.slidesUl.children[newIdx].classList.add('carousel__slide--visible');
+    this.thumbnailsUl.children[newIdx].classList.add(
+      'carousel__slide--visible'
     );
-    if (newIdx > -1 && newIdx !== currentIdx) {
-      loadPrevAndNextImages(newIdx - 1, newIdx + 1);
-      changeCurrentSlide(currentIdx, newIdx);
-      currentIdx = newIdx;
-    }
-  }
 
-  function handleHoverImagePreload(e) {
-    const newIdx = Array.from(carouselSlides).findIndex(
-      (child) => child.firstElementChild.dataset.imgid === e.target.dataset.imgid
+    this.slidesUl.children[oldIdx].classList.remove('carousel__slide--visible');
+    this.thumbnailsUl.children[oldIdx].classList.remove(
+      'carousel__slide--visible'
     );
-    if (newIdx > -1 && newIdx !== currentIdx) {
-      loadImage(carouselSlides[newIdx]?.firstElementChild);
-      loadPrevAndNextImages(newIdx - 1, newIdx + 1);
-    }
-  }
-}
-
-function changeCurrentSlide(oldIdx, newIdx) {
-  loadImage(carouselSlides[newIdx]?.firstElementChild);
-
-  if (newIdx < carouselSlides.length - 1 && oldIdx < newIdx) {
-    loadImage(carouselSlides[newIdx + 1]?.firstElementChild);
-  } else {
-    loadImage(carouselSlides[newIdx - 1]?.firstElementChild);
   }
 
-  carouselSlides[newIdx].classList.add("carousel__slide--visible");
-  carouselThumbnails[newIdx].classList.add("carousel__slide--visible");
-
-  carouselSlides[oldIdx].classList.remove("carousel__slide--visible");
-  carouselThumbnails[oldIdx].classList.remove("carousel__slide--visible");
-}
-
-function loadPrevAndNextImages(prevIdx, nextIdx) {
-  loadImage(carouselSlides[prevIdx]?.firstElementChild);
-  loadImage(carouselSlides[nextIdx]?.firstElementChild);
+  function loadPrevAndNextImages(prevIdx, nextIdx) {
+    loadImage(this.slidesUl.children[prevIdx]?.firstElementChild);
+    loadImage(this.slidesUl.children[nextIdx]?.firstElementChild);
+  }
 }
 
 function loadImage(img) {
-  if (img && (!img.src || img.src.includes("placeholder"))) {
+  if (img && (!img.src || img.src.includes('placeholder'))) {
     img.src = img.dataset.src;
   }
 }

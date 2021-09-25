@@ -20,8 +20,8 @@ body {
 		display: flex;
 		&--thumbnails {
 			position: unset;
-			display: grid;
-			grid-template-columns: repeat(auto-fit, minmax(2rem, 1fr));
+			display: flex;
+			flex-wrap: wrap;
 			justify-content: center;
 			gap: 0.325rem;
 			width: 100%;
